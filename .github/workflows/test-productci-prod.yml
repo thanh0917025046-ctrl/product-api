@@ -1,0 +1,113 @@
+name: Product API CI - Production Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test-crud:
+    runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo:latest
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")' --quiet"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      PORT: 3000
+      MONGODB_URI: mongodb://localhost:27017/productdb
+
+    steps:
+
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check JavaScript syntax
+        run: node --check server.js
+
+      - name: Start Product API
+        run: |
+          npm start > api.log 2>&1 &
+
+      - name: Wait for Product API and MongoDB
+        run: |
+          echo "Waiting for Product API..."
+
+          for i in {1..30}; do
+            if curl -fsS http://localhost:3000/health | grep -q "CONNECTED"; then
+              echo "Product API and MongoDB are ready!"
+              break
+            fi
+
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+
+          curl -fsS http://localhost:3000/health
+
+      - name: Test CREATE Product
+        run: |
+          curl -f -X POST http://localhost:3000/api/products \
+            -H "Content-Type: application/json" \
+            -d '{
+              "pid": 9999,
+              "pname": "CI Test Product",
+              "price": 100000,
+              "quantity": 10
+            }'
+
+      - name: Test READ Product
+        run: |
+          curl -f http://localhost:3000/api/products/9999
+
+      - name: Test UPDATE Product
+        run: |
+          curl -f -X PUT http://localhost:3000/api/products/9999 \
+            -H "Content-Type: application/json" \
+            -d '{
+              "pname": "CI Updated Product",
+              "price": 120000,
+              "quantity": 20
+            }'
+
+      - name: Verify UPDATE
+        run: |
+          curl -f http://localhost:3000/api/products/9999
+
+      - name: Test DELETE Product
+        run: |
+          curl -f -X DELETE http://localhost:3000/api/products/9999
+
+      - name: Verify DELETE
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/products/9999)
+
+          if [ "$STATUS" -eq 404 ]; then
+            echo "DELETE test passed"
+          else
+            echo "DELETE test failed. HTTP status: $STATUS"
+            exit 1
+          fi
+
+      - name: Show API logs if test fails
+        if: failure()
+        run: cat api.log
