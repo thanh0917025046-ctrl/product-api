@@ -179,7 +179,7 @@ app.delete("/api/products/:pid", async (req, res) => {
 
 app.get("/", (req, res) => {
   res.json({
-    message: "Product API is running"
+    message: "Product API version 2"
   });
 });
 
