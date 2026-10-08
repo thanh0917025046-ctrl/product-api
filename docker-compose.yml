@@ -19,8 +19,13 @@ services:
     container_name: product-api
     ports:
       - "3000:3000"
+
     env_file:
       - .env
+
+    environment:
+      PORT: 3000
+      MONGODB_URI: mongodb://nammongodb:27017/productdb
 
     depends_on:
       nammongodb:
