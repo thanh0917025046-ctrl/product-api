@@ -184,26 +184,26 @@ app.get("/", (req, res) => {
 });
 
 /* =========================
-   Start Server
+   Health Check
 ========================= */
 
-const PORT = process.env.PORT || 3000;
-
 app.get("/health", (req, res) => {
-  const mongoState = mongoose.connection.readyState;
-
-  if (mongoState === 1) {
+  if (mongoose.connection.readyState === 1) {
     return res.status(200).json({
-      status: "UP",
-      mongodb: "CONNECTED"
+      status: "healthy"
     });
   }
 
   return res.status(503).json({
-    status: "DOWN",
-    mongodb: "DISCONNECTED"
+    status: "unhealthy"
   });
 });
+
+/* =========================
+   Start Server
+========================= */
+
+const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
