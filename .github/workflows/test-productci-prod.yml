@@ -85,7 +85,7 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{
               "pname": "CI Updated Product",
-              "price": 20000,
+              "price": 2000,
               "quantity": 20
             }'
 
