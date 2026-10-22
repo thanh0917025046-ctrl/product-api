@@ -18,12 +18,12 @@ const productSchema = new mongoose.Schema(
     },
     quantity: {
       type: Number,
-      required: true,
+      required: false,
       min: 0
     }
   },
   {
-    versionKey: true
+    versionKey: false
   }
 );
 
