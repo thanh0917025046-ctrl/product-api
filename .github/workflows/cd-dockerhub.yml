@@ -3,7 +3,7 @@ name: Product API CD - Docker Hub
 on:
   workflow_run:
     workflows:
-      - "Product API CI - Production Test 1"
+      - "Product API CI - Production Test "
     types:
       - completed
 
